@@ -1,0 +1,223 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String   @id @default(cuid())
+  clerkId          String   @unique
+  email            String   @unique
+  name             String?
+  farmName         String?
+  phone            String?
+  address          String?
+  currency         String   @default("INR")
+  defaultMilkPrice Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  customers   Customer[]
+  cows        Cow[]
+  expenses    Expense[]
+  feedEntries FeedEntry[]
+  reports     Report[]
+}
+
+model Customer {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String?
+  address       String?
+  notes         String?
+  pricePerLiter Decimal   @db.Decimal(10, 2)
+  isActive      Boolean   @default(true)
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  deliveries Delivery[]
+  bills      Bill[]
+
+  @@index([userId])
+}
+
+model Delivery {
+  id          String    @id @default(cuid())
+  customerId  String
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  date        DateTime  @db.Date
+  liters      Decimal   @db.Decimal(10, 2)
+  session     Session   @default(MORNING) // MORNING | EVENING
+  priceAtTime Decimal   @db.Decimal(10, 2) // snapshot of price on that day
+  isHoliday   Boolean   @default(false)
+  notes       String?
+  lockedAt    DateTime? // locked after 24h
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([customerId, date, session])
+  @@index([customerId, date])
+}
+
+enum Session {
+  MORNING
+  EVENING
+}
+
+model Bill {
+  id          String     @id @default(cuid())
+  customerId  String
+  customer    Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  month       Int // 1-12
+  year        Int
+  totalLiters Decimal    @db.Decimal(10, 2)
+  totalAmount Decimal    @db.Decimal(10, 2)
+  paidAmount  Decimal    @default(0) @db.Decimal(10, 2)
+  status      BillStatus @default(UNPAID)
+  dueDate     DateTime?
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  payments Payment[]
+
+  @@unique([customerId, month, year])
+}
+
+enum BillStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  billId    String
+  bill      Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+  amount    Decimal  @db.Decimal(10, 2)
+  paidAt    DateTime @default(now())
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model Cow {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tagNumber   String
+  name        String
+  breed       String
+  dateOfBirth DateTime?
+  age         Int? // in months
+  status      CowStatus @default(ACTIVE)
+  notes       String?
+  addedAt     DateTime  @default(now())
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  feedEntries FeedEntry[]
+
+  @@index([userId])
+}
+
+enum CowStatus {
+  ACTIVE
+  DRY
+  MILKING
+  PREGNANT
+  SICK
+  SOLD
+  DECEASED
+}
+
+model FeedEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cowId      String?
+  cow        Cow?     @relation(fields: [cowId], references: [id])
+  date       DateTime @db.Date
+  feedType   FeedType
+  customType String? // if feedType = CUSTOM
+  quantityKg Decimal  @db.Decimal(10, 2)
+  costPerKg  Decimal  @db.Decimal(10, 2)
+  totalCost  Decimal  @db.Decimal(10, 2) // computed: quantityKg * costPerKg
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, date])
+}
+
+enum FeedType {
+  GREEN_FODDER
+  DRY_FODDER
+  CONCENTRATE
+  SILAGE
+  MINERAL_MIX
+  CUSTOM
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    ExpenseCategory
+  amount      Decimal         @db.Decimal(10, 2)
+  date        DateTime        @db.Date
+  notes       String?
+  isRecurring Boolean         @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([userId, date])
+}
+
+enum ExpenseCategory {
+  FEED
+  MEDICINE
+  LABOR
+  ELECTRICITY
+  MAINTENANCE
+  TRANSPORT
+  OTHER
+}
+
+model Report {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         ReportType
+  title        String
+  description  String?
+  month        Int? // for monthly reports (1-12)
+  year         Int? // for monthly reports
+  customerId   String? // for customer statements
+  customerName String? // snapshot for display
+  startDate    DateTime? // for customer statements
+  endDate      DateTime? // for customer statements
+  data         Json // contains the report data as JSON
+  createdAt    DateTime   @default(now())
+
+  @@index([userId, type])
+  @@index([userId, createdAt])
+}
+
+enum ReportType {
+  MONTHLY
+  CUSTOMER_STATEMENT
+}
