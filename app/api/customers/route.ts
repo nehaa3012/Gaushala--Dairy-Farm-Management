@@ -55,7 +55,6 @@ export async function POST(req: Request) {
       )
     }
 
-
     // Check for duplicate phone
     if (parsed.data.phone) {
       const existing = await prisma.customer.findFirst({
@@ -90,55 +89,3 @@ export async function POST(req: Request) {
     )
   }
 }
-
-// PUT /api/customers/:id - Update customer
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
-  try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const body = await req.json()
-    const parsed = customerSchema.safeParse(body)
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Validation failed", details: parsed.error.format() },
-        { status: 400 }
-      )
-    }
-
-    // Check for duplicate phone (excluding current customer)
-    if (parsed.data.phone) {
-      const existing = await prisma.customer.findFirst({
-        where: {
-          userId: user.id,
-          phone: parsed.data.phone,
-          id: { not: params.id },
-          deletedAt: null,
-        },
-      })
-
-      if (existing) {
-        return NextResponse.json(
-          { error: "Phone number already exists" },
-          { status: 409 }
-        )
-      }
-    }
-
-    const customer = await prisma.customer.update({
-      where: { id: params.id },
-      data: parsed.data,
-    })
-
-    return NextResponse.json(customer)
-  } catch (error) {
-    console.error("Update customer error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
-  }
-} 

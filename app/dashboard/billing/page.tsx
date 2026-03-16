@@ -14,6 +14,7 @@ import {
   MoreVertical,
   Eye,
   Download,
+  Wallet,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -35,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import BillForm from "@/components/forms/BillForm"
+import PaymentForm from "@/components/forms/PaymentForm"
 import { toast } from "sonner"
 
 interface Bill {
@@ -49,7 +51,7 @@ interface Bill {
   year: number
   totalAmount: number
   paidAmount: number
-  status: "PENDING" | "PARTIAL" | "PAID"
+  status: "UNPAID" | "PARTIAL" | "PAID"
   dueDate: string
   createdAt: string
 }
@@ -89,6 +91,8 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
+  const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
 
   useEffect(() => {
     fetchBills()
@@ -113,8 +117,19 @@ export default function BillingPage() {
     fetchBills()
   }
 
+  const handlePaymentSuccess = () => {
+    setIsPaymentDialogOpen(false)
+    setSelectedBill(null)
+    fetchBills()
+  }
+
   const handleAddNew = () => {
     setIsDialogOpen(true)
+  }
+
+  const handleRecordPayment = (bill: Bill) => {
+    setSelectedBill(bill)
+    setIsPaymentDialogOpen(true)
   }
 
   const filteredBills = bills.filter((bill) => {
@@ -257,13 +272,13 @@ export default function BillingPage() {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="mb-2 flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span className="font-semibold">
                             {MONTH_NAMES[bill.month - 1]} {bill.year}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                        <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
                           <User className="h-3 w-3" />
                           {bill.customer.name}
                         </div>
@@ -305,8 +320,8 @@ export default function BillingPage() {
                             bill.status === "PAID"
                               ? "default"
                               : bill.status === "PARTIAL"
-                              ? "secondary"
-                              : "outline"
+                                ? "secondary"
+                                : "outline"
                           }
                         >
                           {bill.status}
@@ -327,6 +342,15 @@ export default function BillingPage() {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
+                            {bill.status !== "PAID" && (
+                              <DropdownMenuItem
+                                className="cursor-pointer"
+                                onClick={() => handleRecordPayment(bill)}
+                              >
+                                <Wallet className="mr-2 h-4 w-4" />
+                                Record Payment
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem className="cursor-pointer">
                               <Download className="mr-2 h-4 w-4" />
                               Download PDF
@@ -355,6 +379,38 @@ export default function BillingPage() {
             onSuccess={handleSuccess}
             onCancel={() => setIsDialogOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Record Payment</DialogTitle>
+            <DialogDescription>
+              Record a payment for this bill. You can make partial or full
+              payments.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedBill && (
+            <PaymentForm
+              billId={selectedBill.id}
+              billDetails={{
+                customerName: selectedBill.customer.name,
+                month: MONTH_NAMES[selectedBill.month - 1],
+                year: selectedBill.year,
+                totalAmount: Number(selectedBill.totalAmount),
+                paidAmount: Number(selectedBill.paidAmount),
+                outstandingAmount:
+                  Number(selectedBill.totalAmount) -
+                  Number(selectedBill.paidAmount),
+              }}
+              onSuccess={handlePaymentSuccess}
+              onCancel={() => {
+                setIsPaymentDialogOpen(false)
+                setSelectedBill(null)
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
