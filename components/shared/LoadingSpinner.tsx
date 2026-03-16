@@ -2,7 +2,13 @@
 
 import { motion } from "framer-motion"
 
-export function LoadingSpinner() {
+interface LoadingSpinnerProps {
+  message?: string
+}
+
+export function LoadingSpinner({
+  message = "Loading...",
+}: LoadingSpinnerProps) {
   return (
     <div className="flex min-h-[400px] items-center justify-center">
       <motion.div
@@ -12,7 +18,7 @@ export function LoadingSpinner() {
         className="text-center"
       >
         <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-primary"></div>
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-sm text-muted-foreground">{message}</p>
       </motion.div>
     </div>
   )

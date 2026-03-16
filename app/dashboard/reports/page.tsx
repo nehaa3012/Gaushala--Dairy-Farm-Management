@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { motion, Variants } from "framer-motion"
 import {
   BarChart3,
   FileDown,
@@ -57,6 +57,8 @@ import { toast } from "sonner"
 import { MoreVertical, Download } from "lucide-react"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner"
+import { GridBackground } from "@/components/ui/grid-background"
+import { GlowEffect } from "@/components/ui/glow-effect"
 import {
   generateMonthlyReportPDF,
   generateCustomerStatementPDF,
@@ -297,551 +299,646 @@ export default function ReportsPage() {
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i)
   const months = Array.from({ length: 12 }, (_, i) => i + 1)
 
+  const container: Variants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
+
+  const item: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  }
+
+  if (loadingReports) {
+    return <LoadingSpinner message="Loading reports..." />
+  }
+
   return (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
-          Reports & Analytics
-        </h1>
-        <p className="text-muted-foreground">
-          Generate comprehensive farm reports
-        </p>
-      </motion.div>
-
-      <motion.div
-        className="grid gap-6 md:grid-cols-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-      >
-        <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Monthly Report
-            </CardTitle>
-            <CardDescription>
-              Complete monthly farm summary including cows, feed, expenses, and revenue
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              className="w-full"
-              onClick={() => setMonthlyDialogOpen(true)}
-            >
-              <FileDown className="mr-2 h-4 w-4" />
-              Generate PDF
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Customer Statement
-            </CardTitle>
-            <CardDescription>
-              Individual customer billing statement with delivery history
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              className="w-full" 
-              variant="outline"
-              onClick={() => setStatementDialogOpen(true)}
-            >
-              <FileDown className="mr-2 h-4 w-4" />
-              Generate Statement
-            </Button>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Generated Reports List */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Generated Reports
-            </CardTitle>
-            <CardDescription>View and manage your generated reports</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loadingReports ? (
-              <LoadingSpinner />
-            ) : reports.length === 0 ? (
-              <EmptyState
-                icon={FileText}
-                title="No reports generated yet"
-                description="Generate your first monthly report or customer statement"
-              />
-            ) : (
-              <div className="space-y-3">
-                {reports.map((report, idx) => (
-                  <motion.div
-                    key={report.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:border-primary/50"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-semibold">{report.title}</h3>
-                        <Badge
-                          variant={
-                            report.type === "MONTHLY" ? "default" : "secondary"
-                          }
-                        >
-                          {report.type === "MONTHLY" ? "Monthly" : "Statement"}
-                        </Badge>
-                      </div>
-                      {report.description && (
-                        <p className="text-sm text-muted-foreground">
-                          {report.description}
-                        </p>
-                      )}
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Generated on{" "}
-                        {new Date(report.createdAt).toLocaleDateString()} at{" "}
-                        {new Date(report.createdAt).toLocaleTimeString()}
-                      </p>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleViewReport(report)}
-                        >
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDownloadPDF(report)}
-                        >
-                          <Download className="mr-2 h-4 w-4" />
-                          Download PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setReportToDelete(report.id)
-                            setDeleteDialogOpen(true)
-                          }}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Monthly Report Dialog */}
-      <Dialog open={monthlyDialogOpen} onOpenChange={setMonthlyDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Generate Monthly Report</DialogTitle>
-            <DialogDescription>
-              Select the month and year for the report
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="year">Year</Label>
-                <Select
-                  value={monthlyYear.toString()}
-                  onValueChange={(value) => setMonthlyYear(parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {years.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="month">Month</Label>
-                <Select
-                  value={monthlyMonth.toString()}
-                  onValueChange={(value) => setMonthlyMonth(parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select month" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {months.map((month) => (
-                      <SelectItem key={month} value={month.toString()}>
-                        {getMonthName(month)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+    <GridBackground className="min-h-screen">
+      <GlowEffect
+        color="blue"
+        size="lg"
+        className="-top-20 right-10 opacity-30"
+      />
+      <GlowEffect
+        color="purple"
+        size="md"
+        className="bottom-20 left-10 opacity-20"
+      />
+      <div className="space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between"
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-600/20 backdrop-blur-sm">
+              <BarChart3 className="h-6 w-6 text-blue-500" />
             </div>
-            <div className="rounded-lg bg-blue-500/10 p-4">
-              <p className="text-sm text-muted-foreground">
-                Report will include all data for{" "}
-                <span className="font-semibold text-foreground">
-                  {getMonthName(monthlyMonth)} {monthlyYear}
-                </span>
+            <div>
+              <h1 className="bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-4xl font-bold tracking-tight text-transparent">
+                Reports & Analytics
+              </h1>
+              <p className="text-muted-foreground">
+                Generate comprehensive farm reports
               </p>
             </div>
-            <div className="flex gap-3 pt-2">
-              <Button
-                onClick={handleGenerateMonthlyReport}
-                disabled={generatingMonthly}
-                className="flex-1"
-              >
-                {generatingMonthly ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <FileDown className="mr-2 h-4 w-4" />
-                    Generate PDF
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setMonthlyDialogOpen(false)}
-                disabled={generatingMonthly}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </motion.div>
 
-      {/* Customer Statement Dialog */}
-      <Dialog open={statementDialogOpen} onOpenChange={setStatementDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Generate Customer Statement</DialogTitle>
-            <DialogDescription>
-              Select customer and date range for the statement
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="customer">Customer</Label>
-              {loadingCustomers ? (
-                <div className="flex h-10 items-center justify-center rounded-md border bg-muted/50">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              ) : customers.length === 0 ? (
-                <div className="flex h-10 items-center justify-center rounded-md border border-yellow-500/50 bg-yellow-500/10 text-sm text-yellow-700">
-                  No customers available
-                </div>
-              ) : (
-                <Select
-                  value={selectedCustomerId}
-                  onValueChange={setSelectedCustomerId}
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid gap-5 md:grid-cols-2"
+        >
+          <motion.div
+            variants={item}
+            whileHover={{ scale: 1.02, y: -5 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <Card className="card-gradient border-blue-500/20 transition-all hover:border-blue-500/40 hover:shadow-xl hover:shadow-blue-500/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-600/20">
+                    <BarChart3 className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <span>Monthly Report</span>
+                </CardTitle>
+                <CardDescription>
+                  Complete monthly farm summary including cows, feed, expenses,
+                  and revenue
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={() => setMonthlyDialogOpen(true)}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                        {customer.phone && ` - ${customer.phone}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Generate PDF
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            variants={item}
+            whileHover={{ scale: 1.02, y: -5 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <Card className="card-gradient border-blue-500/20 transition-all hover:border-blue-500/40 hover:shadow-xl hover:shadow-blue-500/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-600/20">
+                    <User className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <span>Customer Statement</span>
+                </CardTitle>
+                <CardDescription>
+                  Individual customer billing statement with delivery history
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  variant="outline"
+                  onClick={() => setStatementDialogOpen(true)}
+                >
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Generate Statement
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
+
+        {/* Generated Reports List */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="card-gradient border-blue-500/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-600/20">
+                  <FileText className="h-5 w-5 text-blue-500" />
+                </div>
+                <span>Generated Reports</span>
+              </CardTitle>
+              <CardDescription>
+                View and manage your generated reports
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {reports.length === 0 ? (
+                <EmptyState
+                  icon={FileText}
+                  title="No reports generated yet"
+                  description="Generate your first monthly report or customer statement"
+                />
+              ) : (
+                <div className="space-y-3">
+                  {reports.map((report, idx) => (
+                    <motion.div
+                      key={report.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      whileHover={{ scale: 1.03, y: -5 }}
+                      className="flex items-center justify-between rounded-lg border border-blue-500/20 bg-card/50 p-4 backdrop-blur-sm transition-all hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/10"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-semibold">{report.title}</h3>
+                          <Badge
+                            variant={
+                              report.type === "MONTHLY"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {report.type === "MONTHLY"
+                              ? "Monthly"
+                              : "Statement"}
+                          </Badge>
+                        </div>
+                        {report.description && (
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {report.description}
+                          </p>
+                        )}
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Generated on{" "}
+                          {new Date(report.createdAt).toLocaleDateString()} at{" "}
+                          {new Date(report.createdAt).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="backdrop-blur-sm"
+                        >
+                          <DropdownMenuItem
+                            onClick={() => handleViewReport(report)}
+                            className="hover:bg-blue-500/10"
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDownloadPDF(report)}
+                            className="hover:bg-blue-500/10"
+                          >
+                            <Download className="mr-2 h-4 w-4" />
+                            Download PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setReportToDelete(report.id)
+                              setDeleteDialogOpen(true)
+                            }}
+                            className="text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </motion.div>
+                  ))}
+                </div>
               )}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={statementStartDate}
-                  onChange={(e) => setStatementStartDate(e.target.value)}
-                />
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Monthly Report Dialog */}
+        <Dialog open={monthlyDialogOpen} onOpenChange={setMonthlyDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Generate Monthly Report</DialogTitle>
+              <DialogDescription>
+                Select the month and year for the report
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="year">Year</Label>
+                  <Select
+                    value={monthlyYear.toString()}
+                    onValueChange={(value) => setMonthlyYear(parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="month">Month</Label>
+                  <Select
+                    value={monthlyMonth.toString()}
+                    onValueChange={(value) => setMonthlyMonth(parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month) => (
+                        <SelectItem key={month} value={month.toString()}>
+                          {getMonthName(month)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="endDate">End Date</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={statementEndDate}
-                  onChange={(e) => setStatementEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-            {selectedCustomerId && statementStartDate && statementEndDate && (
               <div className="rounded-lg bg-blue-500/10 p-4">
                 <p className="text-sm text-muted-foreground">
-                  Statement will include deliveries and bills for{" "}
+                  Report will include all data for{" "}
                   <span className="font-semibold text-foreground">
-                    {customers.find((c) => c.id === selectedCustomerId)?.name}
-                  </span>
-                  {" "}from{" "}
-                  <span className="font-semibold text-foreground">
-                    {new Date(statementStartDate).toLocaleDateString()}
-                  </span>
-                  {" "}to{" "}
-                  <span className="font-semibold text-foreground">
-                    {new Date(statementEndDate).toLocaleDateString()}
+                    {getMonthName(monthlyMonth)} {monthlyYear}
                   </span>
                 </p>
               </div>
-            )}
-            <div className="flex gap-3 pt-2">
-              <Button
-                onClick={handleGenerateStatement}
-                disabled={
-                  generatingStatement ||
-                  !selectedCustomerId ||
-                  !statementStartDate ||
-                  !statementEndDate ||
-                  customers.length === 0
-                }
-                className="flex-1"
-              >
-                {generatingStatement ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <FileDown className="mr-2 h-4 w-4" />
-                    Generate Statement
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setStatementDialogOpen(false)}
-                disabled={generatingStatement}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* View Report Dialog */}
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{selectedReport?.title}</DialogTitle>
-            <DialogDescription>{selectedReport?.description}</DialogDescription>
-          </DialogHeader>
-          {selectedReport && (
-            <div className="space-y-4 pt-4">
-              {selectedReport.type === "MONTHLY" && (
-                <div className="space-y-4">
-                  <div className="rounded-lg bg-primary/10 p-4">
-                    <h3 className="mb-3 font-semibold">Summary</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Active Cows</p>
-                        <p className="text-lg font-semibold">
-                          {selectedReport.data.summary.activeCows}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Total Revenue</p>
-                        <p className="text-lg font-semibold">
-                          ₹{selectedReport.data.summary.totalRevenue.toFixed(2)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Total Expenses</p>
-                        <p className="text-lg font-semibold">
-                          ₹
-                          {selectedReport.data.summary.totalExpenses.toFixed(2)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Net Profit</p>
-                        <p
-                          className={`text-lg font-semibold ${
-                            selectedReport.data.summary.netProfit >= 0
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          ₹{selectedReport.data.summary.netProfit.toFixed(2)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Milk Delivered</p>
-                        <p className="text-lg font-semibold">
-                          {selectedReport.data.summary.totalMilkDelivered.toFixed(
-                            2
-                          )}{" "}
-                          L
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Deliveries</p>
-                        <p className="text-lg font-semibold">
-                          {selectedReport.data.summary.deliveryCount}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {selectedReport.type === "CUSTOMER_STATEMENT" && (
-                <div className="space-y-4">
-                  <div className="rounded-lg bg-primary/10 p-4">
-                    <h3 className="mb-3 font-semibold">Customer Information</h3>
-                    <div className="space-y-2 text-sm">
-                      <p>
-                        <span className="text-muted-foreground">Name:</span>{" "}
-                        <span className="font-semibold">
-                          {selectedReport.data.customer.name}
-                        </span>
-                      </p>
-                      {selectedReport.data.customer.phone && (
-                        <p>
-                          <span className="text-muted-foreground">Phone:</span>{" "}
-                          {selectedReport.data.customer.phone}
-                        </p>
-                      )}
-                      {selectedReport.data.customer.address && (
-                        <p>
-                          <span className="text-muted-foreground">
-                            Address:
-                          </span>{" "}
-                          {selectedReport.data.customer.address}
-                        </p>
-                      )}
-                      <p>
-                        <span className="text-muted-foreground">
-                          Price per Liter:
-                        </span>{" "}
-                        ₹{selectedReport.data.customer.pricePerLiter.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg bg-blue-500/10 p-4">
-                    <h3 className="mb-3 font-semibold">Statement Summary</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Total Liters</p>
-                        <p className="text-lg font-semibold">
-                          {selectedReport.data.summary.totalLiters.toFixed(2)} L
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Total Amount</p>
-                        <p className="text-lg font-semibold">
-                          ₹{selectedReport.data.summary.totalAmount.toFixed(2)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Total Paid</p>
-                        <p className="text-lg font-semibold text-green-600">
-                          ₹{selectedReport.data.summary.totalPaid.toFixed(2)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Balance</p>
-                        <p
-                          className={`text-lg font-semibold ${
-                            selectedReport.data.summary.balance > 0
-                              ? "text-red-600"
-                              : "text-green-600"
-                          }`}
-                        >
-                          ₹{selectedReport.data.summary.balance.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3">
+              <div className="flex gap-3 pt-2">
                 <Button
-                  onClick={() => selectedReport && handleDownloadPDF(selectedReport)}
-                  className="flex items-center gap-2"
+                  onClick={handleGenerateMonthlyReport}
+                  disabled={generatingMonthly}
+                  className="flex-1"
                 >
-                  <Download className="h-4 w-4" />
-                  Download PDF
+                  {generatingMonthly ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <FileDown className="mr-2 h-4 w-4" />
+                      Generate PDF
+                    </>
+                  )}
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setViewDialogOpen(false)}
+                  onClick={() => setMonthlyDialogOpen(false)}
+                  disabled={generatingMonthly}
+                  className="flex-1"
                 >
-                  Close
+                  Cancel
                 </Button>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Report?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. The report will be permanently
-              deleted from the system.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteReport}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete"
+        {/* Customer Statement Dialog */}
+        <Dialog
+          open={statementDialogOpen}
+          onOpenChange={setStatementDialogOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Generate Customer Statement</DialogTitle>
+              <DialogDescription>
+                Select customer and date range for the statement
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="customer">Customer</Label>
+                {loadingCustomers ? (
+                  <div className="flex h-10 items-center justify-center rounded-md border bg-muted/50">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                ) : customers.length === 0 ? (
+                  <div className="flex h-10 items-center justify-center rounded-md border border-yellow-500/50 bg-yellow-500/10 text-sm text-yellow-700">
+                    No customers available
+                  </div>
+                ) : (
+                  <Select
+                    value={selectedCustomerId}
+                    onValueChange={setSelectedCustomerId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.name}
+                          {customer.phone && ` - ${customer.phone}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={statementStartDate}
+                    onChange={(e) => setStatementStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">End Date</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={statementEndDate}
+                    onChange={(e) => setStatementEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+              {selectedCustomerId && statementStartDate && statementEndDate && (
+                <div className="rounded-lg bg-blue-500/10 p-4">
+                  <p className="text-sm text-muted-foreground">
+                    Statement will include deliveries and bills for{" "}
+                    <span className="font-semibold text-foreground">
+                      {customers.find((c) => c.id === selectedCustomerId)?.name}
+                    </span>{" "}
+                    from{" "}
+                    <span className="font-semibold text-foreground">
+                      {new Date(statementStartDate).toLocaleDateString()}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-semibold text-foreground">
+                      {new Date(statementEndDate).toLocaleDateString()}
+                    </span>
+                  </p>
+                </div>
               )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={handleGenerateStatement}
+                  disabled={
+                    generatingStatement ||
+                    !selectedCustomerId ||
+                    !statementStartDate ||
+                    !statementEndDate ||
+                    customers.length === 0
+                  }
+                  className="flex-1"
+                >
+                  {generatingStatement ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <FileDown className="mr-2 h-4 w-4" />
+                      Generate Statement
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setStatementDialogOpen(false)}
+                  disabled={generatingStatement}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Report Dialog */}
+        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+          <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedReport?.title}</DialogTitle>
+              <DialogDescription>
+                {selectedReport?.description}
+              </DialogDescription>
+            </DialogHeader>
+            {selectedReport && (
+              <div className="space-y-4 pt-4">
+                {selectedReport.type === "MONTHLY" && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-primary/10 p-4">
+                      <h3 className="mb-3 font-semibold">Summary</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Active Cows</p>
+                          <p className="text-lg font-semibold">
+                            {selectedReport.data.summary.activeCows}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Total Revenue</p>
+                          <p className="text-lg font-semibold">
+                            ₹
+                            {selectedReport.data.summary.totalRevenue.toFixed(
+                              2
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">
+                            Total Expenses
+                          </p>
+                          <p className="text-lg font-semibold">
+                            ₹
+                            {selectedReport.data.summary.totalExpenses.toFixed(
+                              2
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Net Profit</p>
+                          <p
+                            className={`text-lg font-semibold ${
+                              selectedReport.data.summary.netProfit >= 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            ₹{selectedReport.data.summary.netProfit.toFixed(2)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">
+                            Milk Delivered
+                          </p>
+                          <p className="text-lg font-semibold">
+                            {selectedReport.data.summary.totalMilkDelivered.toFixed(
+                              2
+                            )}{" "}
+                            L
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Deliveries</p>
+                          <p className="text-lg font-semibold">
+                            {selectedReport.data.summary.deliveryCount}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedReport.type === "CUSTOMER_STATEMENT" && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-primary/10 p-4">
+                      <h3 className="mb-3 font-semibold">
+                        Customer Information
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <p>
+                          <span className="text-muted-foreground">Name:</span>{" "}
+                          <span className="font-semibold">
+                            {selectedReport.data.customer.name}
+                          </span>
+                        </p>
+                        {selectedReport.data.customer.phone && (
+                          <p>
+                            <span className="text-muted-foreground">
+                              Phone:
+                            </span>{" "}
+                            {selectedReport.data.customer.phone}
+                          </p>
+                        )}
+                        {selectedReport.data.customer.address && (
+                          <p>
+                            <span className="text-muted-foreground">
+                              Address:
+                            </span>{" "}
+                            {selectedReport.data.customer.address}
+                          </p>
+                        )}
+                        <p>
+                          <span className="text-muted-foreground">
+                            Price per Liter:
+                          </span>{" "}
+                          ₹
+                          {selectedReport.data.customer.pricePerLiter.toFixed(
+                            2
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg bg-blue-500/10 p-4">
+                      <h3 className="mb-3 font-semibold">Statement Summary</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Total Liters</p>
+                          <p className="text-lg font-semibold">
+                            {selectedReport.data.summary.totalLiters.toFixed(2)}{" "}
+                            L
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Total Amount</p>
+                          <p className="text-lg font-semibold">
+                            ₹
+                            {selectedReport.data.summary.totalAmount.toFixed(2)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Total Paid</p>
+                          <p className="text-lg font-semibold text-green-600">
+                            ₹{selectedReport.data.summary.totalPaid.toFixed(2)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Balance</p>
+                          <p
+                            className={`text-lg font-semibold ${
+                              selectedReport.data.summary.balance > 0
+                                ? "text-red-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            ₹{selectedReport.data.summary.balance.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3">
+                  <Button
+                    onClick={() =>
+                      selectedReport && handleDownloadPDF(selectedReport)
+                    }
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setViewDialogOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Report?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. The report will be permanently
+                deleted from the system.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteReport}
+                disabled={deleting}
+                className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </GridBackground>
   )
 }
