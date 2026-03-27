@@ -1,21 +1,57 @@
-# Next.js template
+# 🐄 Gaushala Dairy Farm Management System
 
-This is a Next.js template with shadcn/ui.
+A modern, full-stack web application designed to digitize and simplify dairy farm operations. Track milk distribution, manage customers, monitor expenses, and gain insights through an intuitive dashboard.
 
-## Adding components
+🚀 **Live Demo**: https://gaushala-dairy-farm-management.vercel.app/  
+📂 **GitHub Repo**: https://github.com/nehaa3012/Gaushala--Dairy-Farm-Management/
 
-To add components to your app, run the following command:
+---
+
+## ✨ Features
+
+- **Milk Distribution Tracking** – Record daily milk supply per customer  
+- **Customer Management** – Maintain monthly logs and customer records  
+- **Expense Tracking** – Monitor feed, electricity, transport, maintenance, and medicine costs  
+- **Analytics Dashboard** – Visual insights into milk production and expenses  
+- **Authentication System** – Secure login with Clerk  
+- **Monthly Summaries** – Get detailed reports of farm activity  
+- **Responsive UI** – Clean and fast user experience  
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Next.js 16** – React framework with App Router  
+- **React** – UI library  
+- **Tailwind CSS + shadcn/ui** – Styling  
+
+### Backend
+- **Next.js API Routes** – Serverless APIs  
+- **Prisma** – ORM  
+- **PostgreSQL** – Database  
+
+### Integrations
+- **Clerk** – Authentication  
+- **Vercel** – Deployment  
+
+---
+
+## 📋 Prerequisites
+
+Before running this project, ensure you have:
+
+- Node.js 18+ installed  
+- PostgreSQL database  
+- Clerk account for authentication  
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
 
 ```bash
-npx shadcn@latest add button
-```
-
-This will place the ui components in the `components` directory.
-
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button";
+git clone https://github.com/nehaa3012/Gaushala--Dairy-Farm-Management.git
+cd Gaushala--Dairy-Farm-Management
 ```
