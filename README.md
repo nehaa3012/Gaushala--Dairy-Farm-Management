@@ -55,3 +55,82 @@ Before running this project, ensure you have:
 git clone https://github.com/nehaa3012/Gaushala--Dairy-Farm-Management.git
 cd Gaushala--Dairy-Farm-Management
 ```
+
+2. Install Dependencies
+
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+3. Environment Variables
+Create a .env file:
+
+```bash
+# Database
+DATABASE_URL=your_postgresql_url
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_key
+CLERK_SECRET_KEY=your_secret_key
+
+# App URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+4. Database Setup
+
+```bash
+# Generate Prisma Client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate dev
+```
+
+5. Run Development Server
+
+```bash
+npm run dev
+```
+Open 👉 http://localhost:3000
+
+📁 Project Structure
+
+```bash
+gaushala-dairy-farm-management/
+├── app/
+│   ├── api/                 # Backend API routes
+│   ├── dashboard/           # Main dashboard pages
+│   └── layout.js
+├── components/              # Reusable UI components
+├── lib/                     # Utilities and configs
+├── prisma/                  # Database schema
+├── public/                  # Static assets
+└── styles/                  # Global styles
+```
+
+🎯 Key Features Explained
+
+1. Milk Tracking System
+Track daily milk supply per customer
+Maintain monthly records automatically
+Easy editing and updates
+
+2. Expense Management
+Categorize expenses (feed, electricity, etc.)
+Track daily and monthly costs
+Get total expense insights
+
+3. Dashboard Analytics
+Visual representation of:
+Milk production
+Customer consumption
+Expenses vs revenue
+
+4. Authentication System
+Secure login/signup using Clerk
+User-specific data handling
