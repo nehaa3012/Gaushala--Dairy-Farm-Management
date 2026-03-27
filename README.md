@@ -56,7 +56,7 @@ git clone https://github.com/nehaa3012/Gaushala--Dairy-Farm-Management.git
 cd Gaushala--Dairy-Farm-Management
 ```
 
-2. Install Dependencies
+### 2. Install Dependencies
 
 ```bash
 npm install
@@ -66,7 +66,7 @@ yarn install
 pnpm install
 ```
 
-3. Environment Variables
+### 3. Environment Variables
 Create a .env file:
 
 ```bash
@@ -81,7 +81,7 @@ CLERK_SECRET_KEY=your_secret_key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-4. Database Setup
+### 4. Database Setup
 
 ```bash
 # Generate Prisma Client
@@ -91,7 +91,7 @@ npx prisma generate
 npx prisma migrate dev
 ```
 
-5. Run Development Server
+### 5. Run Development Server
 
 ```bash
 npm run dev
