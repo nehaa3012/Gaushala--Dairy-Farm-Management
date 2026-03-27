@@ -98,7 +98,7 @@ npm run dev
 ```
 Open 👉 http://localhost:3000
 
-📁 Project Structure
+## 📁 Project Structure
 
 ```bash
 gaushala-dairy-farm-management/
@@ -113,24 +113,24 @@ gaushala-dairy-farm-management/
 └── styles/                  # Global styles
 ```
 
-🎯 Key Features Explained
+## 🎯 Key Features Explained
 
-1. Milk Tracking System
+### 1. Milk Tracking System
 Track daily milk supply per customer
 Maintain monthly records automatically
 Easy editing and updates
 
-2. Expense Management
+### 2. Expense Management
 Categorize expenses (feed, electricity, etc.)
 Track daily and monthly costs
 Get total expense insights
 
-3. Dashboard Analytics
+### 3. Dashboard Analytics
 Visual representation of:
 Milk production
 Customer consumption
 Expenses vs revenue
 
-4. Authentication System
+### 4. Authentication System
 Secure login/signup using Clerk
 User-specific data handling
