@@ -59,7 +59,7 @@ export function MilkSalesTrendChart({ data }: MilkSalesTrendChartProps) {
                 border: "1px solid hsl(var(--border))",
                 borderRadius: "6px",
               }}
-              formatter={(value: any, name: string) => {
+              formatter={(value, name) => {
                 if (name === "liters") return [`${value} L`, "Liters"]
                 return [`₹${value}`, "Revenue"]
               }}
